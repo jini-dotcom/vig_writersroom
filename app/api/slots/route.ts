@@ -1,4 +1,5 @@
-// app/api/slots/route.ts
+// updated
+// app/api/slots/route.ts// app/api/slots/route.ts
 // 지원자에게 노출할 가용 슬롯 조회
 // 핵심 규칙: PD 1명이라도 free = true면 노출, PD 정보는 숨김
 
