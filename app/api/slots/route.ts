@@ -35,8 +35,8 @@ export async function GET(req: NextRequest) {
 
   // 2. 해당 주의 슬롯 조회
   const start = weekStart ? new Date(weekStart) : getThisMonday()
-  const end = new Date(start)
-  end.setDate(end.getDate() + 5)
+const end = new Date(start)
+end.setDate(end.getDate() + 30) // 한 달치
 
   // available_slots view 사용: 1명 이상 free인 슬롯만 반환
   // 지원자에게는 start_at, end_at만 노출 (free_pd_ids 등 내부 정보 제외)
