@@ -73,12 +73,10 @@ export async function GET(req: NextRequest) {
 }
 
 function getThisMonday() {
-  const d = new Date()
-  const kstOffset = 9 * 60 * 60 * 1000
-  const kst = new Date(d.getTime() + kstOffset)
-  const day = kst.getUTCDay()
-  const diff = day === 0 ? -6 : 1 - day
-  kst.setUTCDate(kst.getUTCDate() + diff)
+  const now = new Date()
+  // 오늘 날짜 기준 00:00 KST
+  const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000)
   kst.setUTCHours(0, 0, 0, 0)
-  return new Date(kst.getTime() - kstOffset)
+  // UTC로 변환
+  return new Date(kst.getTime() - 9 * 60 * 60 * 1000)
 }
