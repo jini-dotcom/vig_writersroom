@@ -74,9 +74,13 @@ export async function GET(req: NextRequest) {
 
 function getThisMonday() {
   const d = new Date()
-  const day = d.getDay()
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1)
-  d.setDate(diff)
-  d.setHours(0, 0, 0, 0)
-  return d
+  // KST 기준으로 이번 주 월요일 계산
+  const kstOffset = 9 * 60 * 60 * 1000
+  const kst = new Date(d.getTime() + kstOffset)
+  const day = kst.getUTCDay() // 0=일, 1=월 ...
+  const diff = day === 0 ? -6 : 1 - day
+  kst.setUTCDate(kst.getUTCDate() + diff)
+  kst.setUTCHours(0, 0, 0, 0)
+  // UTC로 변환해서 반환
+  return new Date(kst.getTime() - kstOffset)
 }
