@@ -1,5 +1,5 @@
 'use client'
-// app/admin/applicants/page.tsx
+// app/admin/../applicants/page.tsx
 // 관리자 지원자 목록 — 토큰 링크 복사
 
 import { useState, useEffect } from 'react'
