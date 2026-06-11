@@ -47,9 +47,9 @@ function BookContent() {
   // 날짜별 슬롯 맵
   const slotsByDate: Record<string, any[]> = {}
   for (const slot of slots) {
-    const key = new Date(slot.start_at).toLocaleDateString('ko-KR', {
-      timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit'
-    })
+const key = new Date(slot.start_at).toLocaleDateString('ko-KR', {
+  timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit'
+}).replace(/\./g, '.').trim()
     if (!slotsByDate[key]) slotsByDate[key] = []
     slotsByDate[key].push(slot)
   }
@@ -91,8 +91,7 @@ function BookContent() {
   if (week.length > 0) weeks.push([...week, ...Array(7 - week.length).fill(null)])
 
 function getDateKey(day: number) {
-  const d = new Date(year, month, day)
-  return d.toLocaleDateString('ko-KR', {
+  return new Date(2026, 5, day).toLocaleDateString('ko-KR', {
     timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit'
   })
 }
