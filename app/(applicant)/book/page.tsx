@@ -38,7 +38,7 @@ function BookContent() {
     const res = await fetch('/api/bookings', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ token, requested_slots: [selected] }),
+      body: JSON.stringify({ token, start_at: selected.start_at, end_at: selected.end_at }),
     })
     if (res.ok) router.push('/done')
     else { const d = await res.json(); setError(d.error) }
