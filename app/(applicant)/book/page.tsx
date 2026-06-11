@@ -19,7 +19,7 @@ function BookContent() {
   const [applicant, setApplicant] = useState<any>(null)
   const [slots, setSlots] = useState<any[]>([])
   const [selectedDate, setSelectedDate] = useState<string>('')
-  const [selectedSlot, setSelectedSlot] = useState<any>(null)
+  const [selectedSlots, setSelectedSlots] = useState<any[]>([]) // 복수 선택
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -37,7 +37,7 @@ function BookContent() {
       .finally(() => setLoading(false))
   }, [token])
 
-  // 날짜별로 슬롯 그룹핑
+  // 날짜별 그룹핑
   const slotsByDate: Record<string, any[]> = {}
   for (const slot of slots) {
     const date = new Date(slot.start_at).toLocaleDateString('ko-KR', {
@@ -49,18 +49,26 @@ function BookContent() {
   }
   const dates = Object.keys(slotsByDate)
 
-  function handleDateSelect(date: string) {
-    setSelectedDate(date)
-    setSelectedSlot(null)
+  function toggleSlot(slot: any) {
+    const exists = selectedSlots.find(s => s.start_at === slot.start_at)
+    if (exists) {
+      setSelectedSlots(selectedSlots.filter(s => s.start_at !== slot.start_at))
+    } else {
+      setSelectedSlots([...selectedSlots, slot])
+    }
+  }
+
+  function isSelected(slot: any) {
+    return !!selectedSlots.find(s => s.start_at === slot.start_at)
   }
 
   async function handleSubmit() {
-    if (!selectedSlot) return
+    if (selectedSlots.length === 0) return
     setSubmitting(true)
     const res = await fetch('/api/bookings', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ token, start_at: selectedSlot.start_at, end_at: selectedSlot.end_at }),
+      body: JSON.stringify({ token, requested_slots: selectedSlots }),
     })
     if (res.ok) router.push('/done')
     else { const d = await res.json(); setError(d.error) }
@@ -79,7 +87,7 @@ function BookContent() {
         </div>
 
         <div style={{background:'#f0fdf8',borderRadius:'8px',padding:'10px 14px',fontSize:'12px',color:'#065f46',marginBottom:'20px'}}>
-          가능한 시간대를 선택해주세요. 담당 PD는 확정 후 이메일로 안내드립니다.
+          가능한 시간을 모두 선택해주세요. 담당 PD 일정 확인 후 확정 안내드립니다.
         </div>
 
         {error && <div style={{background:'#fef2f2',color:'#991b1b',padding:'10px 14px',borderRadius:'8px',fontSize:'13px',marginBottom:'12px'}}>{error}</div>}
@@ -88,59 +96,79 @@ function BookContent() {
           <div style={{textAlign:'center',color:'#aaa',fontSize:'13px',padding:'40px 0'}}>현재 예약 가능한 시간이 없습니다.</div>
         )}
 
-        {/* 날짜 선택 */}
+        {/* 날짜 탭 */}
         {dates.length > 0 && (
           <div style={{marginBottom:'16px'}}>
-            <div style={{fontSize:'12px',color:'#888',marginBottom:'8px'}}>날짜 선택</div>
-            <div style={{display:'flex',flexDirection:'column',gap:'6px'}}>
-              {dates.map(date => (
-                <div key={date} onClick={() => handleDateSelect(date)}
-                  style={{
-                    border:`1px solid ${selectedDate===date?'#10b981':'#e5e7eb'}`,
-                    borderRadius:'8px',padding:'12px 14px',cursor:'pointer',
-                    background:selectedDate===date?'#f0fdf4':'#fff',
-                    display:'flex',justifyContent:'space-between',alignItems:'center'
-                  }}>
-                  <span style={{fontSize:'14px',fontWeight:'500'}}>{date}</span>
-                  <span style={{fontSize:'12px',color:'#888'}}>{slotsByDate[date].length}개 가능</span>
+            <div style={{display:'flex',flexWrap:'wrap',gap:'6px',marginBottom:'12px'}}>
+              {dates.map(date => {
+                const checkedCount = slotsByDate[date].filter(s => isSelected(s)).length
+                return (
+                  <button key={date} onClick={() => setSelectedDate(selectedDate === date ? '' : date)}
+                    style={{
+                      fontSize:'12px', padding:'6px 12px', borderRadius:'20px', cursor:'pointer',
+                      border:`1px solid ${selectedDate===date?'#10b981':'#e5e7eb'}`,
+                      background: selectedDate===date ? '#f0fdf4' : '#fff',
+                      color: selectedDate===date ? '#065f46' : '#444',
+                      fontWeight: checkedCount > 0 ? 500 : 400,
+                    }}>
+                    {new Date(slotsByDate[date][0].start_at).toLocaleDateString('ko-KR', {
+                      timeZone:'Asia/Seoul', month:'numeric', day:'numeric', weekday:'short'
+                    })}
+                    {checkedCount > 0 && <span style={{marginLeft:'4px',color:'#10b981'}}>({checkedCount})</span>}
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* 선택된 날짜의 시간 목록 */}
+            {selectedDate && (
+              <div style={{display:'flex',flexWrap:'wrap',gap:'6px'}}>
+                {slotsByDate[selectedDate].map((slot:any) => {
+                  const t = new Date(slot.start_at).toLocaleTimeString('ko-KR', {
+                    timeZone:'Asia/Seoul', hour:'2-digit', minute:'2-digit'
+                  })
+                  const sel = isSelected(slot)
+                  return (
+                    <button key={slot.start_at} onClick={() => toggleSlot(slot)}
+                      style={{
+                        fontSize:'13px', padding:'7px 14px', borderRadius:'8px', cursor:'pointer',
+                        border:`1px solid ${sel?'#10b981':'#e5e7eb'}`,
+                        background: sel ? '#f0fdf4' : '#fff',
+                        color: sel ? '#065f46' : '#444',
+                      }}>
+                      {sel && '✓ '}{t}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 선택된 슬롯 요약 */}
+        {selectedSlots.length > 0 && (
+          <div style={{background:'#f0fdf4',borderRadius:'8px',padding:'10px 14px',marginBottom:'12px'}}>
+            <div style={{fontSize:'12px',color:'#065f46',marginBottom:'6px',fontWeight:500}}>
+              선택된 희망 시간 {selectedSlots.length}개
+            </div>
+            {selectedSlots
+              .sort((a,b) => a.start_at.localeCompare(b.start_at))
+              .map(slot => (
+                <div key={slot.start_at} style={{fontSize:'12px',color:'#065f46',display:'flex',justifyContent:'space-between',marginBottom:'3px'}}>
+                  <span>{new Date(slot.start_at).toLocaleString('ko-KR', {timeZone:'Asia/Seoul', month:'numeric', day:'numeric', weekday:'short', hour:'2-digit', minute:'2-digit'})}</span>
+                  <span style={{cursor:'pointer',color:'#aaa'}} onClick={() => toggleSlot(slot)}>✕</span>
                 </div>
               ))}
-            </div>
           </div>
         )}
 
-        {/* 시간 선택 드롭다운 */}
-        {selectedDate && (
-          <div style={{marginBottom:'16px'}}>
-            <div style={{fontSize:'12px',color:'#888',marginBottom:'8px'}}>시간 선택</div>
-            <select
-              value={selectedSlot?.start_at ?? ''}
-              onChange={e => {
-                const slot = slotsByDate[selectedDate].find((s:any) => s.start_at === e.target.value)
-                setSelectedSlot(slot ?? null)
-              }}
-              style={{width:'100%',padding:'10px 12px',fontSize:'14px',borderRadius:'8px',border:'1px solid #e5e7eb',background:'#fff',cursor:'pointer'}}
-            >
-              <option value=''>시간을 선택해주세요</option>
-              {slotsByDate[selectedDate].map((slot:any) => {
-                const t = new Date(slot.start_at).toLocaleTimeString('ko-KR', {
-                  timeZone:'Asia/Seoul', hour:'2-digit', minute:'2-digit'
-                })
-                return <option key={slot.start_at} value={slot.start_at}>{t}</option>
-              })}
-            </select>
-          </div>
-        )}
-
-        {/* 확정 바 */}
-        <div style={{background:'#f3f4f6',borderRadius:'8px',padding:'12px 14px',display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:'8px'}}>
+        {/* 제출 */}
+        <div style={{background:'#f3f4f6',borderRadius:'8px',padding:'12px 14px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
           <span style={{fontSize:'13px',color:'#666'}}>
-            {selectedSlot
-              ? new Date(selectedSlot.start_at).toLocaleString('ko-KR', {timeZone:'Asia/Seoul'})
-              : '시간을 선택해주세요'}
+            {selectedSlots.length > 0 ? `${selectedSlots.length}개 시간 선택됨` : '시간을 선택해주세요'}
           </span>
-          <button onClick={handleSubmit} disabled={!selectedSlot || submitting}
-            style={{background:'#111',color:'#fff',border:'none',borderRadius:'8px',padding:'8px 16px',fontSize:'13px',cursor:'pointer',opacity:(!selectedSlot||submitting)?0.4:1}}>
+          <button onClick={handleSubmit} disabled={selectedSlots.length === 0 || submitting}
+            style={{background:'#111',color:'#fff',border:'none',borderRadius:'8px',padding:'8px 16px',fontSize:'13px',cursor:'pointer',opacity:(selectedSlots.length===0||submitting)?0.4:1}}>
             {submitting ? '처리 중...' : '예약 요청'}
           </button>
         </div>
