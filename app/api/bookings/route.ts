@@ -11,11 +11,14 @@ import { sendEmail } from '@/lib/email'
 // body: { token, start_at, end_at }
 // -----------------------------------------------
 export async function POST(req: NextRequest) {
-  const { token, start_at, end_at } = await req.json()
+ const { token, requested_slots } = await req.json()
 
-  if (!token || !start_at || !end_at) {
-    return NextResponse.json({ error: '필수 파라미터 누락' }, { status: 400 })
-  }
+if (!token || !requested_slots || requested_slots.length === 0) {
+  return NextResponse.json({ error: '필수 파라미터 누락' }, { status: 400 })
+}
+
+const start_at = requested_slots[0].start_at
+const end_at = requested_slots[0].end_at
 
   const supabase = createClient()
 
