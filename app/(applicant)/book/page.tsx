@@ -90,9 +90,12 @@ function BookContent() {
   }
   if (week.length > 0) weeks.push([...week, ...Array(7 - week.length).fill(null)])
 
-  function getDateKey(day: number) {
-    return `${year}. ${String(month + 1).padStart(2, '0')}. ${String(day).padStart(2, '0')}.`
-  }
+function getDateKey(day: number) {
+  const d = new Date(year, month, day)
+  return d.toLocaleDateString('ko-KR', {
+    timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit'
+  })
+}
 
   function getSelectedCount(day: number) {
     return (slotsByDate[getDateKey(day)] ?? []).filter(s => isSelected(s)).length
@@ -144,7 +147,7 @@ function BookContent() {
                     }}>
                     <div style={{
                       fontSize:'13px', fontWeight: hasSlots && !isPast ? 500 : 400,
-                      color: di === 0 ? '#ef4444' : di === 6 ? '#3b82f6' : hasSlots && !isPast ? '#111' : '#ccc',
+                      color: (di === 0 || di === 6) ? '#ccc' : hasSlots && !isPast ? '#111' : '#ccc',
                     }}>{day}</div>
                     {selCount > 0 && (
                       <div style={{width:'6px',height:'6px',background:'#10b981',borderRadius:'50%',margin:'2px auto 0'}} />
